@@ -23,6 +23,8 @@ var cursors;
 var jumpButton;
 var shootButton;
 
+var enemies = [];
+
 function preload() {
     this.load.image('sky', 'assets/sky.png');
     this.load.image('ground', 'assets/platform.png');
@@ -32,6 +34,7 @@ function preload() {
     this.load.image('arrow_right', 'assets/arrow_right.png');
     this.load.image('arrow_up', 'assets/arrow_up.png');
     this.load.image('shoot_button', 'assets/shoot_button.png');
+    this.load.spritesheet('enemy-1', 'assets/enemy-1.png', { frameWidth: 32, frameHeight: 32 });
 }
 
 function create() {
@@ -45,6 +48,27 @@ function create() {
     player.setCollideWorldBounds(true);
 
     this.physics.add.collider(player, platforms);
+
+    enemies.push(this.physics.add.sprite(300, 300, 'enemy-1').setScale(1).refreshBody());
+    enemies[0].setBounce(1, 1).setCollideWorldBounds(true).setVelocityY(50).setVelocityX(0).setDepth(1);
+    this.anims.create({
+        key: 'enemy-1-jump',
+        frames: this.anims.generateFrameNumbers('enemy-1', { frames: [1] }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'enemy-1-ground',
+        frames: this.anims.generateFrameNumbers('enemy-1', { frames: [0] }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.physics.add.collider(enemies, platforms, function(enemy) {
+        enemy.anims.play('enemy-1-ground', true);
+    }, function(enemy) {
+        enemy.anims.play('enemy-1-jump', true);
+    });
+
 
     // Create virtual arrow keys
     var arrowLeft = this.add.image(100, 560, 'arrow_left');
@@ -108,7 +132,7 @@ function update() {
     else {
         // If the left or right button is not pressed, play the turn animation and maintain the facing direction
         player.setVelocityX(0);
-        player.anims.play('turn');
+        player.anims.play('turn', true);
     }
 
     if (cursors.up.isDown && player.body.touching.down) {
@@ -136,5 +160,10 @@ function shootBullet(scene) {
 
     scene.physics.add.collider(bullet, platforms, function() {
         bullet.destroy();
+    });
+
+    scene.physics.add.collider(bullet, enemies, function(bullet, enemy) {
+        bullet.destroy();
+        enemy.destroy();
     });
 }
